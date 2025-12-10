@@ -1,1 +1,1 @@
-# Understanding_BERT_encoder-decoder_architecture
+# Understanding_BERT_encoder-only_architecture
