@@ -1,79 +1,181 @@
-# Copyright 2024 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""BERT model module initialization with lazy loading.
+"""
+Understanding BERT: Educational Implementation
 
-LAZY LOADING PATTERN:
-=====================
-This module implements lazy loading to improve import performance. Instead of loading
-all BERT components immediately, modules are loaded only when first accessed.
+This is an educational restructuring of BERT (Bidirectional Encoder Representations from Transformers)
+organized into clear, well-documented modules for learning purposes.
 
-Benefits:
-1. Faster startup: Initial import is nearly instant
-2. Lower memory: Only loads what's actually used
-3. Reduced dependencies: Doesn't require all deps unless used
+PROJECT STRUCTURE:
+==================
+tokenization/          - Tokenization components
+    vocab_utils.py     - Vocabulary loading utilities
+    bert_tokenizer.py  - BERT WordPiece tokenizer
 
-How it works:
-- TYPE_CHECKING block: Used by type checkers (mypy, pylance) for static analysis
-- Runtime block: Replaces module with _LazyModule that loads components on-demand
+bert/                  - BERT model components
+    config.py          - Model configuration
+    embeddings.py      - Input embeddings
+    attention.py       - Attention mechanisms
+    feedforward.py     - Feed-forward networks
+    encoder.py         - Transformer layers
+    pooler.py          - Sequence pooling
+    prediction_heads.py- Pretraining heads (MLM, NSP)
+    base_model.py      - Core BERT model
+    task_models.py     - Task-specific models
 
-Example usage:
-    from transformers.models.bert import BertModel, BertTokenizer
-    # At this point, nothing is actually loaded yet
+LEARNING PATH:
+==============
+1. Configuration (bert.config):
+   Start here to understand BERT's hyperparameters and architecture choices.
 
-    model = BertModel.from_pretrained("bert-base-uncased")
-    # Now BertModel and its dependencies are loaded
+2. Tokenization (tokenization):
+   Learn how text is converted to tokens using WordPiece algorithm.
+
+3. Embeddings (bert.embeddings):
+   Understand how tokens become dense vectors (word + position + segment).
+
+4. Attention (bert.attention):
+   Study the multi-head self-attention mechanism - the heart of transformers.
+
+5. Feed-Forward (bert.feedforward):
+   Explore the position-wise FFN that processes each token independently.
+
+6. Encoder (bert.encoder):
+   See how attention and FFN combine into transformer layers and stack together.
+
+7. Pooler (bert.pooler):
+   Learn how [CLS] token is used for sequence-level tasks.
+
+8. Prediction Heads (bert.prediction_heads):
+   Understand pretraining objectives: MLM and NSP.
+
+9. Base Model (bert.base_model):
+   See how all components combine into the complete BERT model.
+
+10. Task Models (bert.task_models):
+    Learn how BERT adapts to specific tasks through fine-tuning.
+
+QUICK START:
+============
+# Import configuration and models
+from bert import BertConfig, BertModel, BertForSequenceClassification
+
+# Import tokenizer
+from tokenization import BertTokenizer
+
+# Create a BERT-base configuration
+config = BertConfig()  # Defaults to BERT-base (12 layers, 768 hidden, 12 heads)
+
+# Create a base BERT model
+model = BertModel(config)
+
+# Or create a task-specific model (e.g., for sentiment classification)
+classifier = BertForSequenceClassification(config)
+
+# Create a tokenizer
+tokenizer = BertTokenizer(do_lower_case=True)
+
+EDUCATIONAL NOTES:
+==================
+- All modules have extensive comments explaining concepts
+- Code is organized for clarity over optimization
+- Each file focuses on a single conceptual component
+- Comments explain both "what" and "why"
+
+ORIGINAL AUTHORS:
+=================
+This code is derived from the HuggingFace Transformers library and
+Google's original BERT implementation, reorganized for educational purposes.
 """
 
-# TYPE_CHECKING is a special constant that's True during type checking, False at runtime
-from typing import TYPE_CHECKING
+# ============================================================
+# TOKENIZATION COMPONENTS
+# ============================================================
+from tokenization import (
+    BertTokenizer,
+    BertTokenizerFast,
+    load_vocab,
+)
 
-# Lazy loading infrastructure from HuggingFace utilities
-from ...utils import _LazyModule  # Enables deferred module loading
-from ...utils.import_utils import define_import_structure  # Discovers available exports
+# ============================================================
+# BERT MODEL COMPONENTS
+# ============================================================
 
+# Configuration
+from bert import BertConfig
 
-# TYPE CHECKING BLOCK
-# ===================
-# This block executes ONLY during static type analysis (not at runtime)
-# It imports all components normally so type checkers understand the module structure
-if TYPE_CHECKING:
-    # Import all configuration classes (BertConfig, etc.)
-    from .configuration_bert import *
-    # Import all model classes (BertModel, BertForSequenceClassification, etc.)
-    from .modeling_bert import *
-    # Import all tokenizer classes (BertTokenizer, BertTokenizerFast, etc.)
-    from .tokenization_bert import *
+# Core architectural components
+from bert import (
+    BertEmbeddings,
+    BertSelfAttention,
+    BertCrossAttention,
+    BertAttention,
+    BertIntermediate,
+    BertOutput,
+    BertLayer,
+    BertEncoder,
+    BertPooler,
+)
 
-# RUNTIME BLOCK
-# =============
-# This block executes during actual program execution
-# It replaces this module with a lazy-loading proxy
-else:
-    import sys
+# Prediction heads for pretraining
+from bert import (
+    BertPreTrainingHeads,
+    BertOnlyMLMHead,
+    BertOnlyNSPHead,
+)
 
-    # Get the path to this __init__.py file
-    _file = globals()["__file__"]
+# Base models
+from bert import (
+    BertPreTrainedModel,
+    BertModel,
+)
 
-    # Replace the current module in sys.modules with a lazy-loading version
-    # When someone accesses an attribute (like BertModel), _LazyModule:
-    # 1. Checks if it's been loaded yet
-    # 2. If not, imports the real module
-    # 3. Returns the requested attribute
-    # 4. Caches it for future use
-    sys.modules[__name__] = _LazyModule(
-        __name__,                              # Module name (transformers.models.bert)
-        _file,                                 # Path to this file
-        define_import_structure(_file),        # Discover what can be imported
-        module_spec=__spec__                   # Module specification metadata
-    )
+# Task-specific models
+from bert import (
+    BertForPreTraining,
+    BertForMaskedLM,
+    BertForSequenceClassification,
+    BertForQuestionAnswering,
+)
+
+# ============================================================
+# DEFINE EXPORTS
+# ============================================================
+__all__ = [
+    # Tokenization
+    "BertTokenizer",
+    "BertTokenizerFast",
+    "load_vocab",
+    # Configuration
+    "BertConfig",
+    # Core components
+    "BertEmbeddings",
+    "BertSelfAttention",
+    "BertCrossAttention",
+    "BertAttention",
+    "BertIntermediate",
+    "BertOutput",
+    "BertLayer",
+    "BertEncoder",
+    "BertPooler",
+    # Prediction heads
+    "BertPreTrainingHeads",
+    "BertOnlyMLMHead",
+    "BertOnlyNSPHead",
+    # Base models
+    "BertPreTrainedModel",
+    "BertModel",
+    # Task models
+    "BertForPreTraining",
+    "BertForMaskedLM",
+    "BertForSequenceClassification",
+    "BertForQuestionAnswering",
+]
+
+# Version information
+__version__ = "1.0.0-educational"
+
+# Educational attribution
+__educational_note__ = """
+This is an educational restructuring of BERT for learning purposes.
+Original implementations by Google AI Language Team and HuggingFace.
+Reorganized with extensive comments for understanding transformer architecture.
+"""
