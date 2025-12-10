@@ -1,4 +1,4 @@
-# Understanding BERT architecture through its source code
+# Understanding BERT source code
 
 This repository reorganizes the BERT implementation into well-separated, commented components, each isolated in its own file to help understand the architecture. 
 
